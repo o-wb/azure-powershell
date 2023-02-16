@@ -15,7 +15,6 @@
 # ----------------------------------------------------------------------------------
 
 <#
-TODO: Fill this out with updated deployment info.
 .Synopsis
 Creates a mobile network site, packet core control plane, packet core data plane and attached data network.
 .Description
@@ -39,21 +38,22 @@ function Deploy-AzMobileNetwork {
     # TODO: Have OutputType for each of the resources created by the function
     [OutputType([Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Models.Api20221101.ISite])]
 
-
     param(
-        # Add parameter for each of the parameters required by New-AzMobileNetworkSite
-        [Parameter(Mandatory)]
-        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
-        [System.String]
-        # The name of the mobile network.
-        ${MobileNetworkName},
+        # TODO: Add parameter for DeploymentMode
+        # TODO: Confirm the following should not be implemented: SimGroupNames, DataNetworkName
 
         [Parameter(Mandatory)]
         [Alias('SiteName')]
         [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
         [System.String]
-        # The name of the mobile network site.
+        # The root name of the whole set of site resources.
         ${Name},
+
+        [Parameter(Mandatory)]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
+        [System.String]
+        # The name of the mobile network.
+        ${MobileNetworkName},
 
         [Parameter(Mandatory)]
         [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
@@ -62,152 +62,265 @@ function Deploy-AzMobileNetwork {
         # The name is case insensitive.
         ${ResourceGroupName},
 
+        [Parameter(Mandatory)]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The geo-location where the resource lives
+        ${Location},
+        
+        [Parameter()]
+        [ArgumentCompleter([Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Support.PlatformType])]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Support.PlatformType]
+        # The platform type of the mobile network.
+        ${PlatformType},
+        
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The logical name for this interface.
+        # This should match one of the interfaces configured on your Azure Stack Edge device.
+        ${ControlPlaneAccessInterfaceName},
+        
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The IPv4 address.
+        ${ControlPlaneAccessInterfaceIpv4Address},
+
+        # parameter for UserPlaneAccessInterfaceName
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The logical name for this interface.
+        # This should match one of the interfaces configured on your Azure Stack Edge device.
+        ${UserPlaneAccessInterfaceName},
+
+        # parameter for UserPlaneAccessInterfaceIpv4Address
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The IPv4 address.
+        ${UserPlaneAccessInterfaceIpv4Address},
+
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The IPv4 address range for the access subnet.
+        ${AccessSubnet},
+
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The IPv4 address of the access gateway.
+        ${AccessGateway},
+
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The logical name for this interface.
+        # This should match one of the interfaces configured on your Azure Stack Edge device.
+        ${UserPlaneDataInterfaceName},
+
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The IPv4 address.
+        ${UserPlaneDataInterfaceIpv4Address},
+
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The IPv4 address range for the data subnet.
+        ${UserPlaneDataInterfaceSubnet},
+        
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # The IPv4 address of the data gateway.
+        ${UserPlaneDataInterfaceGateway},
+
+        [Parameter()]
+        [AllowEmptyCollection()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String[]]
+        # The user equipment (UE) address pool prefixes for the attached data network from which the packet core instance will dynamically assign IP addresses to UEs.The packet core instance assigns an IP address to a UE when the UE sets up a PDU session.
+        # You must define at least one of userEquipmentAddressPoolPrefix and userEquipmentStaticAddressPoolPrefix.
+        # If you define both, they must be of the same size.
+        ${UserEquipmentAddressPoolPrefix},
+    
+        [Parameter()]
+        [AllowEmptyCollection()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String[]]
+        # The user equipment (UE) address pool prefixes for the attached data network from which the packet core instance will assign static IP addresses to UEs.The packet core instance assigns an IP address to a UE when the UE sets up a PDU session.
+        # The static IP address for a specific UE is set in StaticIPConfiguration on the corresponding SIM resource.At least one of userEquipmentAddressPoolPrefix and userEquipmentStaticAddressPoolPrefix must be defined.
+        # If both are defined, they must be of the same size.
+        ${UserEquipmentStaticAddressPoolPrefix},
+        
+        [Parameter()]
+        [ArgumentCompleter([Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Support.CoreNetworkType])]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Support.CoreNetworkType]
+        # The core network technology generation (5G core or EPC / 4G core).
+        ${CoreNetworkTechnology},
+
+        [Parameter()]
+        [ArgumentCompleter([Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Support.NaptEnabled])]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Support.NaptEnabled]
+        # Whether NAPT is enabled for connections to this attached data network.
+        ${NaptEnabled},
+
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String[]]
+        # The DNS servers to signal to UEs to use for this attached data network.
+        # This configuration is mandatory - if you don't want DNS servers, you must provide an empty array.
+        ${DnsAddress},
+
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
+        [System.String]
+        # Azure Arc custom location resource ID.
+        ${CustomLocationId},
+        
         [Parameter()]
         [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
         [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Runtime.DefaultInfo(Script='(Get-AzContext).Subscription.Id')]
         [System.String]
         # The ID of the target subscription.
         ${SubscriptionId},
-
-        [Parameter(Mandatory)]
-        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
-        [System.String]
-        # The geo-location where the resource lives
-        ${Location},
-
+        
         [Parameter()]
         [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
         [System.Collections.Hashtable]
         # Resource tags.
-        ${Tag}
-    )
+        ${Tag},
+                
+        [Parameter()]
+        [Alias('AzureRMContext', 'AzureCredential')]
+        [ValidateNotNull()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Azure')]
+        [System.Management.Automation.PSObject]
+        # The credentials, account, tenant, and subscription used for communication with Azure.
+        ${DefaultProfile},
+        
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
+        [System.Management.Automation.SwitchParameter]
+        # Run the command as a job
+        ${AsJob},
+        
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
+        [System.Management.Automation.SwitchParameter]
+        # Run the command asynchronously
+        ${NoWait},
+        
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+        
+        [Parameter()]
+        [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
+        [System.Management.Automation.SwitchParameter]
+        ${WhatIf}
 
-    # Make a dictionary of the parameters required by New-AzMobileNetworkSite
-    $PSBoundParametersSite = @{
+    )
+        
+        $names = @{
+            Site = "$Name-site"
+            PacketCoreControlPlane = "$Name-pccp"
+            PacketCoreDataPlane = "$Name-pcdp"
+            AttachedDataNetwork = "$Name-adn"
+        }
+        
+        $LocalDiagnosticAccessAuthenticationType = 'None' # TODO: Confirm if this is the correct default value
+        $platformType = 'AKS-HCI'
+        $Sku = '' # TODO: Confirm what the default value should be
+
+        
+        # Make a dictionary of the parameters required by New-AzMobileNetworkSite
+        $PSBoundParametersSite = @{
         MobileNetworkName = $MobileNetworkName
-        Name = $Name
+        Name = $names.Site
         ResourceGroupName = $ResourceGroupName
         SubscriptionId = $SubscriptionId
         Location = $Location
         Tag = $Tag
     }
 
-
+    # Make a dictionary of the parameters required by New-AzMobileNetworkPacketCoreControlPlane
+    $PSBoundParametersPacketCoreControlPlane = @{
+        MobileNetworkName = $MobileNetworkName
+        Name = $names.PacketCoreControlPlane
+        ResourceGroupName = $ResourceGroupName
+        SubscriptionId = $SubscriptionId
+        LocalDiagnosticAccessAuthenticationType = $LocalDiagnosticAccessAuthenticationType
+        Location = $Location
+        PlatformType = $platformType
+        Site = $site.Id
+        Sku = $Sku
+        # AzureStackEdgeDeviceId = $AzureStackEdgeDeviceId
+        # AzureStackHciClusterId = $AzureStackHciClusterId
+        # ConnectedClusterId = $ConnectedClusterId
+        ControlPlaneAccessInterfaceName = $ControlPlaneAccessInterfaceName
+        ControlPlaneAccessInterfaceIpv4Address = $ControlPlaneAccessInterfaceIpv4Address
+        CoreNetworkTechnology = $CoreNetworkTechnology
+        CustomLocationId = $CustomLocationId
+        Tag = $Tag
+    }
     
+    # Make a dictionary of the parameters required by New-AzMobileNetworkPacketCoreDataPlane
+    $PSBoundParametersPacketCoreDataPlane = @{
+        MobileNetworkName = $MobileNetworkName
+        Name = $names.PacketCoreDataPlane
+        PacketCoreControlPlaneName = $names.PacketCoreControlPlane
+        ResourceGroupName = $ResourceGroupName
+        SubscriptionId = $SubscriptionId
+        Location = $Location
+        UserPlaneAccessInterfaceName = $UserPlaneAccessInterfaceName
+        UserPlaneAccessInterfaceIpv4Address = $UserPlaneAccessInterfaceIpv4Address
+        UserPlaneAccessInterfaceIpv4Gateway = $AccessGateway
+        UserPlaneAccessInterfaceIpv4Subnet = $AccessSubnet
+        Tag = $Tag
+    }
+
+    # Make a dictionary of the parameters required by New-AzMobileNetworkAttachedDataNetwork
+    $PSBoundParametersAttachedDataNetwork = @{
+        MobileNetworkName = $MobileNetworkName
+        Name = $names.AttachedDataNetwork
+        Location = $Location
+        PacketCoreControlPlaneName = $names.PacketCoreControlPlane
+        PacketCoreDataPlaneName = $names.PacketCoreDataPlane
+        ResourceGroupName = $ResourceGroupName
+        SubscriptionId = $SubscriptionId
+        UserEquipmentAddressPoolPrefix = $UserEquipmentAddressPoolPrefix
+        UserEquipmentStaticAddressPoolPrefix = $UserEquipmentStaticAddressPoolPrefix
+        UserPlaneDataInterfaceIpv4Address = $UserPlaneDataInterfaceIpv4Address
+        UserPlaneDataInterfaceIpv4Gateway = $UserPlaneDataInterfaceIpv4Gateway
+        UserPlaneDataInterfaceIpv4Subnet = $UserPlaneDataInterfaceIpv4Subnet
+        UserPlaneDataInterfaceName = $UserPlaneDataInterfaceName
+        NaptConfigurationEnabled = $NaptEnabled
+        DnsAddress = $DnsAddress
+        Tag = $Tag
+    }
+
+
+    # Create the resources
     # Call New-AzMobileNetworkSite passing through the parameter dictionary
-    $site = New-AzMobileNetworkSite @PSBoundParametersSite
-    
-    # Alternative method?
-    # Az.MobileNetwork.internal\New-AzMobileNetworkSite @PSBoundParametersSite
+    $site = Az.MobileNetwork.internal\New-AzMobileNetworkSite @PSBoundParametersSite
 
-    # New-AzMobileNetworkPacketCoreControlPlane
-    # New-AzMobileNetworkPacketCoreDataPlane
-    # New-AzMobileNetworkAttachedDataNetwork
-  }
+    # Call New-AzMobileNetworkPacketCoreControlPlane passing through the parameter dictionary
+    $packetCoreControlPlane = Az.MobileNetwork.internal\New-AzMobileNetworkPacketCoreControlPlane @PSBoundParametersPacketCoreControlPlane
 
-<#
-function New-AzMobileNetworkSiteOLD {
-[OutputType([Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Models.Api20221101.ISite])]
-[CmdletBinding(DefaultParameterSetName='CreateExpanded', PositionalBinding=$false, SupportsShouldProcess, ConfirmImpact='Medium')]
-param(
-    [Parameter(Mandatory)]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
-    [System.String]
-    # The name of the mobile network.
-    ${MobileNetworkName},
+    # Call New-AzMobileNetworkPacketCoreDataPlane passing through the parameter dictionary
+    $packetCoreDataPlane = Az.MobileNetwork.internal\New-AzMobileNetworkPacketCoreDataPlane @PSBoundParametersPacketCoreDataPlane
 
-    [Parameter(Mandatory)]
-    [Alias('SiteName')]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
-    [System.String]
-    # The name of the mobile network site.
-    ${Name},
+    # Call New-AzMobileNetworkAttachedDataNetwork passing through the parameter dictionary
+    $attachedDataNetwork = Az.MobileNetwork.internal\New-AzMobileNetworkAttachedDataNetwork @PSBoundParametersAttachedDataNetwork
 
-    [Parameter(Mandatory)]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
-    [System.String]
-    # The name of the resource group.
-    # The name is case insensitive.
-    ${ResourceGroupName},
-
-    [Parameter()]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Path')]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Runtime.DefaultInfo(Script='(Get-AzContext).Subscription.Id')]
-    [System.String]
-    # The ID of the target subscription.
-    ${SubscriptionId},
-
-    [Parameter(Mandatory)]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
-    [System.String]
-    # The geo-location where the resource lives
-    ${Location},
-
-    [Parameter()]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Body')]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Runtime.Info(PossibleTypes=([Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Models.Api30.ITrackedResourceTags]))]
-    [System.Collections.Hashtable]
-    # Resource tags.
-    ${Tag},
-
-    [Parameter()]
-    [Alias('AzureRMContext', 'AzureCredential')]
-    [ValidateNotNull()]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Azure')]
-    [System.Management.Automation.PSObject]
-    # The credentials, account, tenant, and subscription used for communication with Azure.
-    ${DefaultProfile},
-
-    [Parameter()]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
-    [System.Management.Automation.SwitchParameter]
-    # Run the command as a job
-    ${AsJob},
-
-    [Parameter(DontShow)]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
-    [System.Management.Automation.SwitchParameter]
-    # Wait for .NET debugger to attach
-    ${Break},
-
-    [Parameter(DontShow)]
-    [ValidateNotNull()]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Runtime.SendAsyncStep[]]
-    # SendAsync Pipeline Steps to be appended to the front of the pipeline
-    ${HttpPipelineAppend},
-
-    [Parameter(DontShow)]
-    [ValidateNotNull()]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Runtime.SendAsyncStep[]]
-    # SendAsync Pipeline Steps to be prepended to the front of the pipeline
-    ${HttpPipelinePrepend},
-
-    [Parameter()]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
-    [System.Management.Automation.SwitchParameter]
-    # Run the command asynchronously
-    ${NoWait},
-
-    [Parameter(DontShow)]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
-    [System.Uri]
-    # The URI for the proxy server to use
-    ${Proxy},
-
-    [Parameter(DontShow)]
-    [ValidateNotNull()]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
-    [System.Management.Automation.PSCredential]
-    # Credentials for a proxy server to use for the remote call
-    ${ProxyCredential},
-
-    [Parameter(DontShow)]
-    [Microsoft.Azure.PowerShell.Cmdlets.MobileNetwork.Category('Runtime')]
-    [System.Management.Automation.SwitchParameter]
-    # Use the default credentials for the proxy
-    ${ProxyUseDefaultCredentials}
-)
 }
-#>
