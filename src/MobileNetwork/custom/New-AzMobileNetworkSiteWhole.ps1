@@ -41,6 +41,7 @@ function Deploy-AzMobileNetwork {
     param(
         # TODO: Add parameter for DeploymentMode
         # TODO: Confirm the following should not be implemented: SimGroupNames, DataNetworkName
+        # Defaults should be SKU = G0, PlatformType=AKS-HCI
 
         [Parameter(Mandatory)]
         [Alias('SiteName')]
@@ -231,26 +232,68 @@ function Deploy-AzMobileNetwork {
 
     )
         
-        $names = @{
-            Site = "$Name-site"
-            PacketCoreControlPlane = "$Name-pccp"
-            PacketCoreDataPlane = "$Name-pcdp"
-            AttachedDataNetwork = "$Name-adn"
-        }
+    $names = @{
+        Site = "$Name-site"
+        PacketCoreControlPlane = "$Name-pccp"
+        PacketCoreDataPlane = "$Name-pcdp"
+        AttachedDataNetwork = "$Name-adn"
+    }
         
-        $LocalDiagnosticAccessAuthenticationType = 'None' # TODO: Confirm if this is the correct default value
-        $platformType = 'AKS-HCI'
-        $Sku = '' # TODO: Confirm what the default value should be
+    $LocalDiagnosticAccessAuthenticationType = 'None' # TODO: Confirm if this is the correct default value
+    $platformType = 'AKS-HCI'
+    $Sku = '' # TODO: Confirm what the default value should be
 
-        
-        # Make a dictionary of the parameters required by New-AzMobileNetworkSite
-        $PSBoundParametersSite = @{
+    
+    # Make a dictionary of the parameters required by New-AzMobileNetworkSite
+
+    $PSBoundParametersSite = @{
         MobileNetworkName = $MobileNetworkName
         Name = $names.Site
         ResourceGroupName = $ResourceGroupName
         SubscriptionId = $SubscriptionId
         Location = $Location
         Tag = $Tag
+    }
+    # If DefaultProfile is not null, add it to the dictionary
+    if ($DefaultProfile) {
+        $PSBoundParametersSite['DefaultProfile'] = $DefaultProfile
+    }
+
+    # Other options
+    # Create copy of PSBoundParameters, then create an inner function that receives an
+    # array of the parameters you want to keep, then loop through these parameters, check if they're there, and if not then remove
+
+    # Create a copy of the PSBoundParameters (using newdictionary)
+    
+
+
+    $PSBoundParameters = $PSBoundParameters.Clone()
+
+    # How can I make a copy of PSBoundParameters without using Clone()?
+    # $PSBoundParameters = @{}
+    # foreach ($key in $PSBoundParameters.Keys) {
+    #     $PSBoundParameters[$key] = $PSBoundParameters[$key]
+    # }
+
+
+
+
+    # Create an array of the parame#ters required for Site
+    $SiteParameters = @(
+        'MobileNetworkName',
+        'Name',
+        'ResourceGroupName',
+        'SubscriptionId',
+        'Location',
+        'Tag',
+        'DefaultProfile'
+    )
+
+    # Loop through the above and if they're not present in the PSBoundParameters, remove them
+    foreach ($parameter in $SiteParameters) {
+        if (-not $PSBoundParameters.ContainsKey($parameter)) {
+            $PSBoundParameters.Remove($parameter)
+        }
     }
 
     # Make a dictionary of the parameters required by New-AzMobileNetworkPacketCoreControlPlane
